@@ -1,0 +1,9 @@
+# Syntax error: missing '=' in model declaration
+pipeline broken {
+  data "x.csv" {
+    feature a : numeric
+    target  y : binary
+  }
+  split 0.8 0.2
+  model m logistic_regression()
+}

@@ -1,0 +1,15 @@
+# Static type / semantic checking
+pipeline typed {
+  data "customers.csv" {
+    feature age  : numeric
+    feature plan : categorical
+    target  churned : binary
+  }
+  split 0.8 0.3
+  scale plan standard
+  encode age onehot
+  scale salary standard
+  model m = linear_regression()
+  train m
+  evaluate rmse
+}

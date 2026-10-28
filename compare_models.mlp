@@ -1,0 +1,20 @@
+# Train and compare several models on the same split
+pipeline compare {
+  data "houses.csv" {
+    feature area  : numeric
+    feature rooms : numeric
+    feature city  : categorical
+    target  price : numeric
+  }
+  split 0.7 0.3 seed 7
+  for c in [area, rooms] { scale c minmax }
+  encode city onehot
+
+  model lin = linear_regression()
+  model gb  = gradient_boosting(n_estimators=150)
+  model knn5 = knn(n_neighbors=5)
+  train lin
+  train gb
+  train knn5
+  evaluate rmse, mae, r2
+}

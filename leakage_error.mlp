@@ -1,0 +1,13 @@
+# Compile-time leakage detection
+pipeline leaky {
+  data "customers.csv" {
+    feature age    : numeric
+    target  churned : binary
+  }
+  scale age standard
+  split 0.8 0.2
+  scale churned standard
+  model m = logistic_regression()
+  train m
+  evaluate accuracy
+}

@@ -1,0 +1,26 @@
+# Customer churn: a valid, leakage-safe pipeline
+pipeline churn {
+  data "customers.csv" {
+    id      customer_id : numeric
+    feature age         : numeric
+    feature tenure      : numeric
+    feature charges     : numeric
+    feature plan        : categorical
+    target  churned     : binary
+  }
+
+  require rows > 100
+  require missing(age) < 0.2
+
+  split 0.8 0.2 seed 42
+
+  for c in [age, tenure, charges] {
+    impute c median
+    scale c standard
+  }
+  encode plan onehot
+
+  model rf = random_forest(n_estimators=200, max_depth=8)
+  train rf
+  evaluate accuracy, f1, auc
+}
