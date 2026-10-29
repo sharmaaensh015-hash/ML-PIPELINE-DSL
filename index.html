@@ -40,7 +40,7 @@ footer{background:var(--accent);color:#fff;display:flex;justify-content:space-be
 </head>
 <body>
 <header><b>▣ MLPipe Studio</b><small>the leakage-safe language for ML pipelines · .mlp</small>
-<button class="ghost" id="theme">Theme</button><button class="run" id="run">▶ Build &amp; Run&nbsp; Ctrl+Enter</button></header>
+<button class="ghost" id="newf">+ New file</button><button class="ghost" id="dlm">Download .mlp</button><button class="ghost" id="dlp">Download .py</button><button class="ghost" id="rst">Reset</button><button class="ghost" id="theme">Theme</button><button class="run" id="run">▶ Build &amp; Run&nbsp; Ctrl+Enter</button></header>
 <main>
 <aside><h4>EXPLORER</h4><div id="files"></div><br><h4>LANGUAGE</h4>
 <ul class="lang"><li>Leakage = compile error</li><li>for-loops (unrolled)</li><li>require = quality gates</li><li>Typed columns</li><li>Compiles to scikit-learn</li></ul></aside>
@@ -297,9 +297,10 @@ Leakage rules (compile errors)
 
 /* ============ UI ============ */
 const $=id=>document.getElementById(id),ta=$("ta"),esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-const files={...SAMPLES};let cur="churn.mlp",tab="Problems",R=null;
+let saved={};try{saved=JSON.parse(localStorage.getItem("mlpipe_files")||"{}")}catch(e){}
+const files={...SAMPLES,...saved};let cur="churn.mlp",tab="Problems",R=null,ready=false;
 const TABS=["Problems","Output","Tokens","AST","Python","Grammar"];
-function build(){const src=ta.value;files[cur]=src;R={errs:[],warns:[],tokens:[],ast:null,py:null,P:null};
+function build(){const src=ta.value;files[cur]=src;try{localStorage.setItem("mlpipe_files",JSON.stringify(files))}catch(e){}R={errs:[],warns:[],tokens:[],ast:null,py:null,P:null};
  try{R.tokens=lex(src);R.ast=parse(R.tokens);const a=analyze(R.ast);R.errs=a.errs;R.warns=a.warns;R.P=a.P;
   if(!a.errs.length)R.py=gen(R.ast,a.P)}catch(x){if(x.kind)R.errs=[x];else throw x}
  draw()}
@@ -320,7 +321,7 @@ function draw(){const n=R.errs.length;
  else p.innerHTML=`<pre>${esc(GRAMMAR)}</pre>`;
  const cp=$("cp");if(cp)cp.onclick=()=>navigator.clipboard.writeText(R.py).then(()=>cp.textContent="Copied")}
 function pos(){const b=ta.value.slice(0,ta.selectionStart).split("\n");$("pos").textContent=`Ln ${b.length}, Col ${b[b.length-1].length+1}   MLPipe   UTF-8`}
-function open(f){files[cur]=ta.value;cur=f;ta.value=files[f];$("fname").textContent=f;
+function open(f){if(ready)files[cur]=ta.value;cur=f;ta.value=files[f];$("fname").textContent=f;
  $("files").innerHTML=Object.keys(files).map(k=>`<div class="f ${k==f?"on":""}" data-f="${k}">▫ ${k}</div>`).join("");build();pos()}
 $("files").onclick=e=>e.target.dataset.f&&open(e.target.dataset.f);
 $("tabs").onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;draw()}};
@@ -333,7 +334,14 @@ ta.addEventListener("keydown",e=>{if(e.ctrlKey&&e.key=="Enter"||e.metaKey&&e.key
  if(e.key=="Tab"){e.preventDefault();document.execCommand("insertText",false,"  ")}});
 $("run").onclick=()=>{build();tab=R.errs.length?"Problems":"Output";draw()};
 $("theme").onclick=()=>{const r=document.documentElement;r.dataset.theme=r.dataset.theme=="dark"?"":"dark"};
-open("churn.mlp");
+function dl(name,text){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/plain"}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+$("newf").onclick=()=>{let n=(prompt("New file name (e.g. myproject)")||"").trim().replace(/[^\w.-]/g,"_");if(!n)return;if(!n.endsWith(".mlp"))n+=".mlp";
+ if(files[n]){alert("A file with that name already exists");return}
+ files[n]=`pipeline ${n.replace(/\.mlp$/,"").replace(/\W/g,"_")} {\n  data "data.csv" {\n    feature a : numeric\n    target  y : binary\n  }\n  split 0.8 0.2\n  model m = logistic_regression()\n  train m\n  evaluate accuracy\n}\n`;open(n)};
+$("dlm").onclick=()=>dl(cur,ta.value);
+$("dlp").onclick=()=>{build();if(!R.py){tab="Problems";draw();alert("Fix the errors first. Python is generated only when the program compiles.");return}dl(cur.replace(/\.mlp$/,"")+".py",R.py)};
+$("rst").onclick=()=>{if(confirm("Reset all files to the original samples? Your own files will be deleted.")){try{localStorage.removeItem("mlpipe_files")}catch(e){}location.reload()}};
+open("churn.mlp");ready=true;
 </script>
 </body>
 </html>
