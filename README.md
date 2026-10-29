@@ -1,3 +1,6 @@
+**Live demo:** 
+https://sharmaaensh015-hash.github.io/ML-PIPELINE-DSL/
+
 # MLPipe Studio: End-to-End Compiler for ML Pipelines
 
 A small DSL (`.mlp`) and an in-browser compiler. Leakage is a **compile error**.
